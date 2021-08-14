@@ -1,59 +1,57 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <signal.h>
 
-#include "msg_bus.h"
-#include "uart_data_ind.h"
-#include "stats_ind.h"
 #include "uart_controller.h"
 #include "stats_controller.h"
 #include "wifi_controller.h"
 #include "bt_controller.h"
+#include "bus_container.h"
+
+static volatile int done = 0;
+void intHandler(int rv)
+{
+    printf("exit(%d)\n", rv);
+    done = 1;
+}
 
 int main(int argc, char** argv)
 {
+    signal(SIGINT, intHandler);
+
     printf("argc=%d argv[0]=%s\n", argc, argv[0]);
 
-    struct msg_bus_t msg_bus_uart;
-    msg_bus_init(&msg_bus_uart, sizeof(struct uart_data_ind_t));
+    uint32_t const num_threads = 4;
+    bus_container_t* bus_container = bus_container_init(num_threads);
 
-    struct msg_bus_t msg_bus_stats_wifi;
-    msg_bus_init(&msg_bus_stats_wifi, sizeof(struct stats_ind_t));
+    uart_controller_t* uart_controller = uart_controller_init(bus_container);
+    stats_controller_t* stats_controller = stats_controller_init(bus_container);
+    wifi_controller_t* wifi_controller = wifi_controller_init(bus_container);
+    bt_controller_t* bt_controller = bt_controller_init(bus_container);
 
-    struct msg_bus_t msg_bus_stats_bt;
-    msg_bus_init(&msg_bus_stats_bt, sizeof(struct stats_ind_t));
+    bus_container_start(bus_container);
+    uart_controller_start(uart_controller);
+    stats_controller_start(stats_controller);
+    wifi_controller_start(wifi_controller);
+    bt_controller_start(bt_controller);
 
+    while (!done)
+    {
+    }
 
-    struct uart_controller_params_t uart_params;
-    uart_params.msg_queue = &msg_bus_uart;
-    pthread_t uart_thread;
-    pthread_create(&uart_thread, NULL, uart_controller, &uart_params);
+    bt_controller_stop(bt_controller);
+    wifi_controller_stop(wifi_controller);
+    stats_controller_stop(stats_controller);
+    uart_controller_stop(uart_controller);
+    bus_container_stop(bus_container);
 
-    struct stats_controller_params_t stats_params;
-    stats_params.msg_bus_uart = &msg_bus_uart;
-    stats_params.msg_bus_stats_wifi = &msg_bus_stats_wifi;
-    stats_params.msg_bus_stats_bt = &msg_bus_stats_bt;
-    pthread_t stats_thread;
-    pthread_create(&stats_thread, NULL, stats_controller, &stats_params);
+    bt_controller_free(bt_controller);
+    wifi_controller_free(wifi_controller);
+    uart_controller_free(uart_controller);
+    stats_controller_free(stats_controller);
 
-    struct wifi_controller_params_t wifi_params;
-    wifi_params.msg_bus_stats = &msg_bus_stats_wifi;
-    pthread_t wifi_thread;
-    pthread_create(&wifi_thread, NULL, wifi_controller, &wifi_params);
-
-    struct bt_controller_params_t bt_params;
-    bt_params.msg_bus_stats = &msg_bus_stats_bt;
-    pthread_t bt_thread;
-    pthread_create(&bt_thread, NULL, bt_controller, &bt_params);
-
-    pthread_join(uart_thread, NULL);
-    pthread_join(stats_thread, NULL);
-    pthread_join(wifi_thread, NULL);
-    pthread_join(bt_thread, NULL);
-
-    msg_bus_free(&msg_bus_uart);
-    msg_bus_free(&msg_bus_stats_wifi);
-    msg_bus_free(&msg_bus_stats_bt);
+    bus_container_free(bus_container);
 
     return 0;
 }

@@ -1,31 +1,48 @@
 #include "wifi_controller.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+
+#include "msg_idxs.h"
+#include "wifi_stats_ind.h"
+#include "handler.h"
+#include "bus_container.h"
 #include "logger.h"
-#include "msg_bus.h"
-#include "stats_ind.h"
-/*
-void send_to_wifi(int8_t avg)
+
+void wifi_controller_receive_wifi_stats_ind(wifi_controller_t* this_, wifi_stats_ind_t const* msg)
 {
-    LM_DBG("Send avg...%d", avg);
+    LM_DBG("uart_data_ind received(avg=%d)", msg->average);
+
+    this_->num_rcvd_msg += 1;
 }
-*/
-void* wifi_controller(void* params_)
+
+wifi_controller_t* wifi_controller_init(bus_container_t* bus_container)
 {
-    LM_DBG("WIFI started");
-    struct wifi_controller_params_t* params = (struct wifi_controller_params_t*)params_;
-    while(1)
-    {
-        struct msg_t* msg = msg_bus_pull_busy(params->msg_bus_stats);
-        if (!msg)
-        {
-            LM_DBG("There are no msgs");
-            continue;
-        }
-        LM_DBG("WIFI consume");
-        //struct stats_ind_t* payload = (struct stats_ind_t*)msg->payload;
-        //send_to_wifi(payload->average);
-        msg_bus_push_free(params->msg_bus_stats, msg);
-    }
-    LM_DBG("WIFI stopped");
-    return 0;
+    wifi_controller_t* this_ = (wifi_controller_t*)malloc(sizeof(wifi_controller_t));
+
+    this_->bus_container = bus_container;
+
+    bus_container_add_handler(
+          bus_container
+        , WIFI_STATS_IND
+        , handler_msg(this_, (void(*)(void*, void const*))wifi_controller_receive_wifi_stats_ind)
+    );
+    return this_;
+}
+
+void wifi_controller_free(wifi_controller_t* this_)
+{
+    free(this_);
+}
+
+void wifi_controller_start(wifi_controller_t* this_)
+{
+    LM_INF("num_rcvd_msg %u", this_->num_rcvd_msg);
+}
+
+void wifi_controller_stop(wifi_controller_t* this_)
+{
+    LM_INF("num_rcvd_msg %u", this_->num_rcvd_msg);
 }

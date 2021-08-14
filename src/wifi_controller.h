@@ -1,10 +1,15 @@
 #pragma once
 
-#include "msg_bus.h"
+#include "bus_container.h"
+#include "wifi_stats_ind.h"
 
-struct wifi_controller_params_t
+typedef struct wifi_controller
 {
-    struct msg_bus_t* msg_bus_stats;
-};
+    bus_container_t*  bus_container;
+    uint32_t          num_rcvd_msg;
+} wifi_controller_t;
 
-void* wifi_controller(void* params_);
+wifi_controller_t* wifi_controller_init(bus_container_t*);
+void wifi_controller_free(wifi_controller_t*);
+void wifi_controller_start(wifi_controller_t*);
+void wifi_controller_stop(wifi_controller_t*);

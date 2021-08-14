@@ -1,41 +1,55 @@
 #include "queue.h"
 
-void queue_init(struct queue_t* queue)
+#include <stdlib.h>
+#include "logger.h"
+
+queue_t* queue_init(uint32_t capacity)
 {
-    queue->begin = 0;
-    queue->end = 0;
-    queue->size = 0;
+    queue_t* this_ = (queue_t*)malloc(sizeof(queue_t));
+    this_->begin = 0;
+    this_->end = 0;
+    this_->size = 0;
+    this_->capacity = capacity;
+    this_->idxs = (uint32_t*)malloc(this_->capacity * sizeof(uint32_t));
+    return this_;
 }
 
-int queue_size(struct queue_t const* queue)
+int queue_free(queue_t* this_)
 {
-    return queue->size;
+    free(this_->idxs);
+    free(this_);
+    return 0;
 }
 
-int queue_empty(struct queue_t const* queue)
+uint32_t queue_size(queue_t const* this_)
 {
-    return queue->size == 0;
+    return this_->size;
 }
 
-int queue_full(struct queue_t const* queue)
+int queue_empty(queue_t const* this_)
 {
-    return queue->size == MSG_CAPACITY;
+    return this_->size == 0;
 }
 
-void queue_push(struct queue_t* queue, uint8_t idx)
+int queue_full(queue_t const* this_)
 {
-    queue->idxs[queue->end] = idx;
-    queue->end = (queue->end + 1) % MSG_CAPACITY;
-    queue->size += 1;
+    return this_->size == this_->capacity;
 }
 
-void queue_pop(struct queue_t* queue)
+void queue_push(queue_t* this_, uint32_t idx)
 {
-    queue->begin = (queue->begin + 1) % MSG_CAPACITY;
-    queue->size -= 1;
+    this_->idxs[this_->end] = idx;
+    this_->end = (this_->end + 1) % this_->capacity;
+    this_->size += 1;
 }
 
-int queue_front(struct queue_t const* queue)
+void queue_pop(queue_t* this_)
 {
-    return queue->idxs[queue->begin];
+    this_->begin = (this_->begin + 1) % MSG_CAPACITY;
+    this_->size -= 1;
+}
+
+uint32_t queue_front(queue_t const* this_)
+{
+    return this_->idxs[this_->begin];
 }

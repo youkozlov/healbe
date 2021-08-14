@@ -1,6 +1,6 @@
 #include "simple_filter.h"
 
-void filter_ctx_init(struct filter_ctx_t* ctx)
+void filter_ctx_init(filter_ctx_t* ctx)
 {
     ctx->sum = 0;
     ctx->size = 0;
@@ -8,7 +8,7 @@ void filter_ctx_init(struct filter_ctx_t* ctx)
     ctx->end = 0;
 }
 
-void filter_ctx_update(struct filter_ctx_t* ctx, char const* data, uint16_t len)
+void filter_ctx_update(filter_ctx_t* ctx, char const* data, uint16_t len)
 {
     for(uint16_t i = 0; i < len; i += 1)
     {
@@ -31,7 +31,7 @@ void filter_ctx_update(struct filter_ctx_t* ctx, char const* data, uint16_t len)
     }
 }
 
-int32_t filter_ctx_get_avg(struct filter_ctx_t* ctx)
+int32_t filter_ctx_get_avg(filter_ctx_t* ctx)
 {
     return ctx->avg;
 }

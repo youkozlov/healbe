@@ -3,24 +3,27 @@
 #include "stdint.h"
 #include "defs.h"
 
-struct queue_t
+typedef struct queue
 {
-    uint8_t begin;
-    uint8_t end;
-    uint8_t size;
-    uint8_t idxs[MSG_CAPACITY];
-};
+    uint32_t    begin;
+    uint32_t    end;
+    uint32_t    size;
+    uint32_t    capacity;
+    uint32_t*   idxs;
+} queue_t;
 
-void queue_init(struct queue_t*);
+queue_t* queue_init(uint32_t capacity);
 
-int queue_size(struct queue_t const*);
+int queue_free(queue_t*);
 
-int queue_empty(struct queue_t const*);
+uint32_t queue_size(queue_t const*);
 
-int queue_full(struct queue_t const*);
+int queue_empty(queue_t const*);
 
-void queue_push(struct queue_t*, uint8_t);
+int queue_full(queue_t const*);
 
-void queue_pop(struct queue_t*);
+void queue_push(queue_t*, uint32_t);
 
-int queue_front(struct queue_t const*);
+void queue_pop(queue_t*);
+
+uint32_t queue_front(queue_t const*);
